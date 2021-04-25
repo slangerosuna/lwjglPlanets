@@ -7,6 +7,7 @@ import engine.graphics.*;
 import engine.io.*;
 
 public class Main implements Runnable {
+	public Shader shader;
 	public Renderer renderer;
 	public Mesh mesh;
 	public Thread game;
@@ -23,10 +24,12 @@ public class Main implements Runnable {
 		window.setBackgroundColor(0.05f, 0.045f, 0.06f);
 		window.create();
 		
-		renderer = new Renderer();
+		shader = new Shader("/shaders/MainVertex.glsl", "/shaders/MainFrag.glsl");
+		renderer = new Renderer(shader);
 		
 		mesh = Mesh.getRectMesh();
 		mesh.create();
+		shader.create();
 	}
 	
 	public void run() {
