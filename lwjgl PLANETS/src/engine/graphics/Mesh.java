@@ -14,26 +14,27 @@ import engine.Math.Vector.Vector3;
 import engine.Math.Vector.Vector4;
 
 public class Mesh {
+	private Material mat = null;
 	private Vertex[] vertices;
 	private int[] indices;
-	private int vao, pbo, ibo;
+	private int vao, pbo, ibo, cbo, uvbo;
 	
 	public static Mesh getRectMesh() {
-		Mesh returnMesh =  new Mesh(new Vertex[] { 
-				new Vertex(new Vector3(-0.5f, 0.5f, 0.0f), Vector2.zero(), Vector4.zero()), 
-				new Vertex(new Vector3(0.5f, 0.5f, 0.0f), Vector2.zero(), Vector4.zero()), 
-				new Vertex(new Vector3(0.5f, -0.5f, 0.0f), Vector2.zero(), Vector4.zero()), 
-				new Vertex(new Vector3(-0.5f, -0.5f, 0.0f), Vector2.zero(), Vector4.zero()) }, 
+		return new Mesh(new Vertex[] { 
+				new Vertex(new Vector3(-0.5f, 0.5f, 0.0f), new Vector2(0, 0), new Vector3(1, 0, 0)), 
+				new Vertex(new Vector3(0.5f, 0.5f, 0.0f), new Vector2(1.0f, 0), new Vector3(0, 0, 1)), 
+				new Vertex(new Vector3(0.5f, -0.5f, 0.0f), new Vector2(1.0f, 1.0f), new Vector3(0, 1, 0)), 
+				new Vertex(new Vector3(-0.5f, -0.5f, 0.0f), new Vector2(0, 1.0f), new Vector3(1, 1, 0)) }, 
 			new int[] { 
 				0, 1, 2,
 				0, 3, 2 
-			}); 
-		return returnMesh; 
+			},new Material("/textures/randomAsset.png")); 
 	}
 	
-	public Mesh(Vertex[] vertices, int[] indices) {
+	public Mesh(Vertex[] vertices, int[] indices, Material mat) {
 		this.vertices = vertices;
 		this.indices = indices;
+		this.mat = mat;
 	}
 	
 	public void create() {
@@ -49,11 +50,29 @@ public class Mesh {
 		}
 		positionBuffer.put(positionData).flip();
 		
-		pbo = GL15.glGenBuffers();
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, pbo);
-		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, positionBuffer, GL15.GL_STATIC_DRAW);
-		GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+		pbo = storeData(positionBuffer, 0, 3);
+		
+		FloatBuffer colorBuffer = MemoryUtil.memAllocFloat(vertices.length * 4);
+		float[] colorData = new float[vertices.length * 4];
+		for (int i = 0; i < vertices.length; i++) {
+			colorData[i * 4] = vertices[i].rgba.x;
+			colorData[i * 4 + 1] = vertices[i].rgba.y;
+			colorData[i * 4 + 2] = vertices[i].rgba.z;
+			colorData[i * 4 + 3] = vertices[i].rgba.w;
+		}
+		colorBuffer.put(colorData).flip();
+		
+		cbo = storeData(colorBuffer, 1, 4);
+		
+		FloatBuffer uvBuffer = MemoryUtil.memAllocFloat(vertices.length * 2);
+		float[] uvData = new float[vertices.length * 2];
+		for (int i = 0; i < vertices.length; i++) {
+			uvData[i * 2] = vertices[i].UV.x;
+			uvData[i * 2 + 1] = vertices[i].UV.y;
+		}
+		uvBuffer.put(uvData).flip();
+		
+		uvbo = storeData(uvBuffer, 2, 2);
 		
 		IntBuffer indicesBuffer = MemoryUtil.memAllocInt(indices.length);
 		indicesBuffer.put(indices).flip();
@@ -63,11 +82,43 @@ public class Mesh {
 		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL15.GL_STATIC_DRAW);
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
-
+	
+	private int storeData(FloatBuffer buffer, int index, int size) {
+		int bufferID = GL15.glGenBuffers();
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferID);
+		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
+		GL20.glVertexAttribPointer(index, size, GL11.GL_FLOAT, false, 0, 0);
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+		return bufferID;
+	}
+	
+	public void destroy() {
+		mat.destroy();
+		
+		GL15.glDeleteBuffers(cbo);
+		GL15.glDeleteBuffers(pbo);
+		GL15.glDeleteBuffers(ibo);
+		GL15.glDeleteBuffers(uvbo);
+		
+		GL30.glDeleteVertexArrays(vao);
+	}
+	
 	public Vertex[] getVertices() {
 		return vertices;
 	}
-
+	
+	public int getTextureID() {
+		return mat.getTextureID();
+	}
+	
+	public int getCBO() {
+		return cbo;
+	}
+	
+	public int getUVBO() {
+		return uvbo;
+	}
+	
 	public int[] getIndices() {
 		return indices;
 	}

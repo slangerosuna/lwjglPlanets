@@ -9,6 +9,12 @@ public class Vector3 {
 		this.z = z;
 	}
 	
+	public void add(Vector3 other) {
+		x += other.x;
+		y += other.y;
+		z += other.z;
+	}
+	
 	public void set(Vector3 vector) {
 		this.x = vector.x;
 		this.y = vector.y;

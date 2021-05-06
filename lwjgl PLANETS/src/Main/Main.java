@@ -3,8 +3,13 @@ package Main;
 import org.lwjgl.glfw.GLFW;
 
 import engine.Math.Vector.*;
-import engine.graphics.*;
-import engine.io.*;
+import engine.UTILS.FileUtils;
+import engine.graphics.Mesh;
+import engine.graphics.Renderer;
+import engine.graphics.Shader;
+import engine.io.Input;
+import engine.io.Window;
+import engine.objects.GameObject;
 
 public class Main implements Runnable {
 	public Shader shader;
@@ -13,6 +18,7 @@ public class Main implements Runnable {
 	public Thread game;
 	public Window window;
 	public final int WIDTH = 1280, HEIGHT = 760;
+	public GameObject object;
 	
 	public void start() {	
 		game = new Thread(this, "game");
@@ -22,13 +28,19 @@ public class Main implements Runnable {
 	public void init() {
 		window = new Window(WIDTH, HEIGHT, "Game");
 		window.setBackgroundColor(0.05f, 0.045f, 0.06f);
-		window.create();
 		
 		shader = new Shader("/shaders/MainVertex.glsl", "/shaders/MainFrag.glsl");
 		renderer = new Renderer(shader);
+		load();
+		
+		window.create();
 		
 		mesh = Mesh.getRectMesh();
+		
 		mesh.create();
+		
+		object = new GameObject(mesh, new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(1, 1, 1));
+		
 		shader.create();
 	}
 	
@@ -39,18 +51,37 @@ public class Main implements Runnable {
 		while (!window.shouldClose()) {
 			update();
 			render();
-			if (Input.isKeyDown(GLFW.GLFW_KEY_ESCAPE)) return;
+			if (Input.isKeyDown(GLFW.GLFW_KEY_F11)) window.setFullscreen(!window.isFullscreen());;
 		}
-		window.destroy();
+		close();
 	}
 	
+	private void close() {
+		save();
+		
+		mesh.destroy();
+		window.destroy();
+		shader.destroy();
+	}
+	
+	private void save() {
+		
+	}
+	
+	private void load() {
+		
+	}
+	
+	private solSystem loadSystem(int index) {
+		return new solSystem(FileUtils.loadAsString("saves/systems" + index));
+	}
 	private void update() {
 		window.update();
 		if (Input.isButtonDown(GLFW.GLFW_MOUSE_BUTTON_LEFT)) System.out.println("X: " + Input.getMouseX() + ", Y: " + Input.getMouseY());
 	}
 	
 	private void render() {
-		renderer.renderMesh(mesh);
+		renderer.renderObject(object);
 		window.swapBuffers();
 	}
 	

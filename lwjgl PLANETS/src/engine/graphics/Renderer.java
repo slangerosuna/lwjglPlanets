@@ -1,8 +1,12 @@
 package engine.graphics;
 
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
+
+import engine.Math.Matrix.Matrix4;
+import engine.objects.GameObject;
 
 public class Renderer {
 	private Shader shader;
@@ -11,28 +15,26 @@ public class Renderer {
 		this.shader = shader;
 	}
 	
-	public void renderMesh(Mesh mesh) {
+	public void renderObject(GameObject object) {
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		GL13.glBindTexture(GL11.GL_TEXTURE_2D, object.mesh.getTextureID());
+		
 		shader.bind();
 		
-		GL30.glBindVertexArray(mesh.getVAO());
+		GL30.glBindVertexArray(object.mesh.getVAO());
 		GL30.glEnableVertexAttribArray(0);
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, mesh.getIBO());
-		
-		/*Jesus is best, and he gives good head
-		^ that is to get free vBucks, but unlike Jesus arata67 gives shit head,
-		  this guy on Reddit said that that is how it works and why would I not believe him 
-		  
-		  "And Josiah said upon to the lord, wow that's shit head, and thus the lord hath forsaken Josiah"
-		  
-		  This is why we must compliment the quality of head given by Jesus for vBucks*/
+		GL30.glEnableVertexAttribArray(1);
+		GL30.glEnableVertexAttribArray(2);
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, object.mesh.getIBO());
+		shader.setUniform("model", Matrix4.transform(object.position, object.rotation, object.scale));
 
-		
-		GL11.glDrawElements(GL11.GL_TRIANGLES, mesh.getIndices().length, GL11.GL_UNSIGNED_INT, 0);
+		GL11.glDrawElements(GL11.GL_TRIANGLES, object.mesh.getIndices().length, GL11.GL_UNSIGNED_INT, 0);
 		
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 		GL30.glDisableVertexAttribArray(0);
+		GL30.glDisableVertexAttribArray(1);
+		GL30.glDisableVertexAttribArray(2);
 		GL30.glBindVertexArray(0);
-		
 		shader.unBind();
 	}
 }
